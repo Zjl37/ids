@@ -1,0 +1,20 @@
+// CJK_Radicals_Supplement =  { '⺀'..'\u{2EFF}' }
+CJK_Strokes = { '㇀'..'\u{31EF}' }
+kana_selected = { "ス" | "コ" | "ユ" | "リ" }
+ideographicSpecial = { kana_selected | CJK_Strokes }
+
+hint = @{ "{" ~ (!"}" ~ ANY)* ~ "}"}
+strokeSeq = @{ "#(" ~ (strokeSeq | !")" ~ !"(" ~ ANY)* ~ ")"}
+overlayArg = { "[" ~ (!"]" ~ ANY)* ~ "]"}
+varAttrib = @{ ("." | ASCII_ALPHA | ASCII_DIGIT)+ }
+
+ideographic = @{ HAN | ideographicSpecial }
+ideographicA = { ideographic ~ varAttrib? }
+unaryOp    = { "↷" | "↔" }
+binIdc     = { ('⿰'..'⿱' | '⿴'..'⿻') ~ overlayArg? }
+terIdc     = { '⿲'..'⿳' }
+unaryExpr  = { unaryOp ~ expr }
+binExpr    = { hint? ~ binIdc ~ expr ~ expr }
+terExpr    = { hint? ~ terIdc ~ expr ~ expr ~ expr }
+strokeExpr = { hint? ~ strokeSeq }
+expr       = ${ unaryExpr | terExpr | binExpr | ideographicA | strokeExpr }
