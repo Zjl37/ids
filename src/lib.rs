@@ -1,3 +1,6 @@
+use std::fmt::format;
+use std::ptr::NonNull;
+
 use pest::iterators::Pair;
 use pest::Parser;
 
@@ -40,7 +43,35 @@ pub struct IDS {
 }
 
 impl IDSNode {
-    fn fmt_r(&self, f: &mut std::fmt::Formatter<'_>, level: usize) -> std::fmt::Result {
+    pub fn to_string_simp(&self, level: usize) -> String {
+        if level == 1 && self.ideographic.is_some() {
+            return self.ideographic.unwrap().to_string();
+        }
+        let lv_next = if level > 1 { level - 1 } else { level };
+        match &self.subtree {
+            IDSExpr::UnaryExpr { op, arg1 } => format!("{}{}", op, arg1.to_string_simp(lv_next)),
+            IDSExpr::BinExpr { op, arg1, arg2, .. } => format!(
+                "{}{}{}",
+                op,
+                arg1.to_string_simp(lv_next),
+                arg2.to_string_simp(lv_next)
+            ),
+            IDSExpr::TerExpr {
+                op,
+                arg1,
+                arg2,
+                arg3,
+            } => format!(
+                "{}{}{}{}",
+                op,
+                arg1.to_string_simp(lv_next),
+                arg2.to_string_simp(lv_next),
+                arg3.to_string_simp(lv_next)
+            ),
+            IDSExpr::Null => "".to_string(),
+        }
+    }
+    fn fmt_tree_r(&self, f: &mut std::fmt::Formatter<'_>, level: usize) -> std::fmt::Result {
         write!(f, "{:width$}* ", "", width = level * 4)?;
         match &self.subtree {
             IDSExpr::UnaryExpr { op, .. } => {
@@ -76,10 +107,10 @@ impl IDSNode {
         writeln!(f)?;
 
         match &self.subtree {
-            IDSExpr::UnaryExpr { arg1, .. } => arg1.fmt_r(f, level + 1),
+            IDSExpr::UnaryExpr { arg1, .. } => arg1.fmt_tree_r(f, level + 1),
             IDSExpr::BinExpr { arg1, arg2, .. } => {
-                arg1.fmt_r(f, level + 1)?;
-                arg2.fmt_r(f, level + 1)
+                arg1.fmt_tree_r(f, level + 1)?;
+                arg2.fmt_tree_r(f, level + 1)
             }
             IDSExpr::TerExpr {
                 op: _,
@@ -87,9 +118,9 @@ impl IDSNode {
                 arg2,
                 arg3,
             } => {
-                arg1.fmt_r(f, level + 1)?;
-                arg2.fmt_r(f, level + 1)?;
-                arg3.fmt_r(f, level + 1)
+                arg1.fmt_tree_r(f, level + 1)?;
+                arg2.fmt_tree_r(f, level + 1)?;
+                arg3.fmt_tree_r(f, level + 1)
             }
             _ => Ok(()),
         }
@@ -102,7 +133,7 @@ impl std::fmt::Display for IDS {
             write!(f, "'{}' ", ch)?;
         }
         writeln!(f)?;
-        self.root.fmt_r(f, 0)
+        self.root.fmt_tree_r(f, 0)
     }
 }
 

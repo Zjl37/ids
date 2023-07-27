@@ -5,7 +5,8 @@ use std::fs;
 use std::io::{self, BufRead};
 
 thread_local!(
-    static IDS_FILE_LIST: RefCell<Vec<String>> = RefCell::new(vec!["./ids/ids_lv0.txt".to_string()]);
+    static IDS_FILE_LIST: RefCell<Vec<String>> =
+        RefCell::new(vec!["./ids/ids_lv0.txt".to_string()]);
 );
 
 pub fn set_ids_file_list(v: Vec<String>) {
@@ -52,7 +53,11 @@ pub fn load() -> Result<HashMap<char, HashMap<String, String>>, io::Error> {
                     continue;
                 }
                 let mut it = v[0].chars();
-                let ch = it.next().unwrap();
+                let ch = it.next();
+                if ch.is_none() {
+                    continue;
+                }
+                let ch = ch.unwrap();
                 if it.next().is_some() {
                     eprintln!("ids 文件有误：'{}'不是一个字", v[0]);
                     continue;
@@ -72,7 +77,7 @@ pub fn load() -> Result<HashMap<char, HashMap<String, String>>, io::Error> {
         for filename in fl.borrow().iter() {
             let file = fs::File::open(filename)?;
             process_1(io::BufReader::new(file));
-        };
+        }
         Ok(())
     })?;
 
